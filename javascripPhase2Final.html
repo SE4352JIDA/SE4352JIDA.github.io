@@ -116,8 +116,8 @@
                         for(var i = urls.length-1; i >=0; i--)
                         {
                             var link = urls[i][1].link(urls[i][1])
-                            document.getElementById("searchResult").innerHTML += (link + "<br />")
-                            //document.getElementById("searchResult").innerHTML += "\n"
+                            document.write("<p>" + urls[i][1].link(urls[i][1]).link(urls[i][1].link(urls[i][1])) + "</p>");
+                            //document.getElementById("searchResult").innerHTML += (link + "<br />")
                         }
                         
                     }
