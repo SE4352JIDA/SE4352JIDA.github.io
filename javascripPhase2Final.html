@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+    <style>       
+        textarea#urlStyle {
+            display: block;
+            resize: none;
+            width: 600px;
+            height: 120px;
+            margin:0 auto;
+        }
+        
+        textarea#queryStyle {
+            display: block;
+            resize: none;
+            width: 600px;
+            height: 60;
+            margin:0 auto;
+        }
+        
+        button{
+            display: block;
+            margin:0 auto;
+        }
+        
+        .checkmark {
+            display: block;
+            height: 25px;
+            width: 25px;
+            background-color: #eee;
+            border-radius: 50%;
+            margin:0 auto;
+        }
+        
+        .checkmark:after {
+            display: block;
+            content: "";
+            display: none;
+            margin:0 auto;
+        }
+        
+        .container input:checked ~ .checkmark:after {
+            display: block;
+            margin:0 auto;
+        }
+        
+        .container .checkmark:after {
+            display: block;
+            background: white;
+            margin:0 auto;
+        }
+        
+    </style>
+    <head>
+        <textarea name ="urlStyle-textarea" placeholder="Enter your URLs here..." id="urlStyle" name="Text" rows = 20 cols=40 wrap="soft" autofocus></textarea>
+        <button id="buttonURL" type="button">Add URLs</button>
+        <!-- Displays the alphabetized lines and circular shifts
+        <textarea placeholder="Circularly Shifted Lines..." id="shiftBox" name="Text" rows = 20 cols40 wrap="soft" disabled></textarea>
+        <textarea placeholder="Alphabetized Lines..." id="alphaBox" name="Text" rows = 20 cols=40 wrap="soft" disabled></textarea>
+        -->
+        <textarea name="queryStyle-textarea" placeholder="Enter Query Here..." id="queryStyle" name="Text" rows = 5 cols=40 wrap="soft"></textarea>
+        <label class="container">OR Search
+            <input type="radio" name="radio" checked="checked" id="radio1">
+        <label class="container">AND Search
+            <input type="radio" name="radio" id="radio2">
+        <label class="container">NOT Search
+            <input type="radio" name="radio" id="radio3">
+        <button id="buttonSearch" type="button">Search</button>
+        
+        
+    </head>
+    <body>
+        <p id="searchResult"></p>
+        
+        <script>
+            var index = []
+            if(!localStorage.getItem("indicies"))
+            {
+                localStorage.setItem("indicies", JSON.stringify(index))
+            }
+            
+            document.getElementById('buttonURL').onclick = function() {
+                var val = document.getElementById("urlStyle").value
+                if(val != ""){
+                    var searchIndex = JSON.parse(localStorage.getItem("indicies"))
+                    var shiftedVal = CircularShift(val)
+                    var alphaVal = shiftedVal.sort(Sorter)
+                    
+                    // Add new indicies to the searchIndex storage
+                    for(var i = 0; i < alphaVal.length; i++){
+                        // If index is already in storage, do not add
+                        if(!searchIndex.includes(alphaVal[i]))
+                        {
+                            searchIndex.push(alphaVal[i])
+                        }
+                    }
+                    // Sort the storage after insertion
+                    searchIndex = searchIndex.sort(Sorter)
+                    localStorage.removeItem("indicies")
+                    localStorage.setItem("indicies", JSON.stringify(searchIndex))
+                }
+                else
+                {
+                    alert("No Values Provided")
+                }
+            }
+            
+            document.getElementById('buttonSearch').onclick = function() {
+                document.getElementById("searchResult").innerHTML = ""
+                if(document.getElementById("queryStyle").value != "")
+                {
+                    var searchIndex = JSON.parse(localStorage.getItem("indicies"))
+                    if(searchIndex.length > 0)
+                    {
+                        var urls = Cyberminer(searchIndex, document.getElementById("queryStyle").value)
+                        
+                        for(var i = urls.length-1; i >=0; i--)
+                        {
+                            var link = urls[i][1].link(urls[i][1])
+                            document.getElementById("searchResult").innerHTML += (link + "<br />")
+                            //document.getElementById("searchResult").innerHTML += "\n"
+                        }
+                        
+                    }
+                    else
+                    {
+                        alert("No indicies in database")
+                    }
+                }
+                else
+                {
+                    alert("No search criteria provided")
+                }
+            }
+            
+            
+            function CircularShift(s){
+                // Split the entry into seperate lines at all newline operators
+                var splitLines = s.split("\n")
+                var shiftedLines = []
+                var lineIndex = 0
+                for (var i = 0; i < splitLines.length; i++){
+                    // Extract the URL here
+                    var url
+                    if(splitLines[i].search(".com") != -1)
+                    {
+                        url = splitLines[i].slice(0, (splitLines[i].search(".com") + 4))
+                        splitLines[i] = splitLines[i].slice((splitLines[i].search(".com") + 4), splitLines[i].length)
+                    }
+                    else if(splitLines[i].search(".net") != -1)
+                    {
+                        url = splitLines[i].slice(0, (splitLines[i].search(".net") + 4))
+                        splitLines[i] = splitLines[i].slice((splitLines[i].search(".net") + 4), splitLines[i].length)
+                    }
+                    else if(splitLines[i].search(".org") != -1)
+                    {
+                        url = splitLines[i].slice(0, (splitLines[i].search(".org") + 4))
+                        splitLines[i] = splitLines[i].slice((splitLines[i].search(".org") + 4), splitLines[i].length)
+                    }
+                    else if(splitLines[i].search(".edu") != -1)
+                    {
+                        url = splitLines[i].slice(0, (splitLines[i].search(".edu") + 4))
+                        splitLines[i] = splitLines[i].slice((splitLines[i].search(".edu") + 4), splitLines[i].length)
+                    }
+                    else
+                    {
+                        alert("No URL provided for line: " + (i+1))
+                        break;
+                    }
+                    // Split each line into seperate words at all spaces
+                    var temp = splitLines[i].split(" ")
+                    // Parse through the split word array
+                    for (var j = 0; j < temp.length; j++){
+                        shiftedLines[lineIndex] = []
+                        for (var k = 0; k < temp.length; k++){
+                            // Upon reaching the last index, add the URL, then the newline operator
+                            // Push the whole line onto the shifted lines array
+                            if(k+1 == temp.length)
+                            {
+                                shiftedLines[lineIndex].push(temp[k])
+                                shiftedLines[lineIndex].push(url)
+                                break;
+                            }
+                            shiftedLines[lineIndex].push(temp[k])
+                        }
+                        lineIndex++
+                        tempString = temp.shift()
+                        temp.push(tempString)
+                    }
+                }
+                return shiftedLines
+            }
+            
+            function Sorter(a, b){
+                tempa = a[0].toUpperCase()
+                tempb = b[0].toUpperCase()
+                if (tempa[0] < tempb[0]) return -1;
+                if (tempa[0] > tempb[0]) return 1;
+                return 0;
+            }
+            
+            function NoiseEliminator(s){
+                
+            }
+            
+            function Cyberminer(indicies, query) {
+            query = query.split(" ")
+            result = []
+            // loop through each group of indicies
+            for(var i = 0; i < indicies.length; i++){
+                // holds how many indicies match query
+                var matches = 0;
+                // holds url aka the last element
+                var url = indicies[i][indicies[i].length-1]
+                // loop through individual indicies
+                for(var j = 0; j < indicies[i].length-1; j++){
+                    for(var k = 0; k < query.length; k++){
+                        // if index and query matches
+                        if(document.getElementById("radio1").checked)
+                        {
+                            if(indicies[i][j] == query[k])
+                                matches++;
+                        }
+                        else if(document.getElementById("radio2").checked)
+                        {
+                            if(indicies[i][j] != query[k])
+                            {
+                                matches = 0;
+                                break;
+                            }
+                            else if(indicies[i][j] == query[k])
+                            {
+                                matches++;
+                                continue;
+                            }
+                        }
+                        else if(document.getElementById("radio3").checked)
+                        {
+                            if(indicies[i][j] != query[k])
+                                matches++;
+                        }
+                            
+                    }
+                }
+                // add matches and url to the final array
+                if(matches != 0)
+                {
+                for(var j = 0; j < result.length; j++)
+                    if(result[j][1] == url)
+                        break;
+                    else if (j == result.length-1)
+                        result.push([matches, url])
+                
+                if(result.length == 0 )
+                    result.push([matches, url])
+                }
+            }
+            //sort the final array based on occurence
+            result = result.sort()
+            return result;
+            }
+            
+        </script>
+    </body>
+</html>
